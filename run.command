@@ -14,7 +14,15 @@ fi
 . .venv/bin/activate
 python3 -m pip install --upgrade pip
 python3 -m pip install -r requirements.txt
-python3 -m playwright install chromium
+
+# Install Playwright Chromium only if missing (macOS cache is usually ~/Library/Caches/ms-playwright)
+CACHE1="$HOME/Library/Caches/ms-playwright"
+CACHE2="$HOME/.cache/ms-playwright"
+if ls "$CACHE1/chromium-"* "$CACHE2/chromium-"* >/dev/null 2>&1; then
+  echo "Playwright Chromium already installed."
+else
+  python3 -m playwright install chromium
+fi
 
 python3 pjf_wizard.py
 

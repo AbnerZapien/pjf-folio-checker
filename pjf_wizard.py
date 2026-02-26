@@ -18,25 +18,36 @@ console = Console()
 
 def normalize_path_input(raw: str) -> str:
     s = raw.strip().strip('"').strip("'")
-    # If it's a mac/Linux path, unescape Terminal drag&drop sequences (\ , \(, \), etc.)
-    if s.startswith('/'):
+    # macOS Terminal drag&drop escapes spaces/paren/etc using backslashes, e.g. Abner\ Dev
+    if s.startswith("/"):
         s = re.sub(r"\\([ ()\[\]{}&;\"'#$!])", r"\1", s)
     return s
 
-
-def open_folder(path: Path):
+def open_path(path: Path) -> bool:
     try:
-        if platform.system() == "Windows":
-            os.startfile(str(path))  # type: ignore[attr-defined]
-        elif platform.system() == "Darwin":
+        if platform.system() == "Darwin":
             subprocess.run(["open", str(path)], check=False)
+        elif platform.system() == "Windows":
+            os.startfile(str(path))  # type: ignore[attr-defined]
         else:
             subprocess.run(["xdg-open", str(path)], check=False)
-    except Exception:
-        pass
+        return True
+    except Exception as e:
+        console.print(f"[yellow]Could not auto-open:[/yellow] {path} ({e})")
+        return False
+
+def open_folder(path: Path) -> bool:
+    return open_path(path)
+
+def open_file(path: Path) -> bool:
+    return open_path(path)
 
 def main():
-    console.print(Panel.fit("[bold cyan]PJF Folio Checker[/bold cyan]\n[dim]Multi-tipo scan from Excel columns[/dim]"))
+    console.print(
+        Panel.fit(
+            "[bold cyan]PJF Folio Checker[/bold cyan]\n[dim]Multi-tipo scan from Excel columns[/dim]"
+        )
+    )
 
     console.print("\n[bold]Step 1[/bold] — Excel file")
     console.print("[dim]Tip: drag & drop the file into this terminal and press Enter.[/dim]")
@@ -53,32 +64,37 @@ def main():
     out_dir = p.resolve().parent
     console.print(f"\n[bold]Outputs will be saved to:[/bold] {out_dir}")
 
-    # Pre-read tipos to show what will be checked
     tipos = pjf_checker.read_folios_by_tipo_xlsx(str(p))
     if not tipos:
-        console.print("[bold red]No columns detected.[/bold red] Make sure headers are in row 1 and folios start in row 2.")
+        console.print(
+            "[bold red]No columns detected.[/bold red] "
+            "Make sure headers are in row 1 and folios start in row 2."
+        )
         sys.exit(1)
 
-    t = Table(title="Plan (Excel Columns)")
-    t.add_column("Tipo", style="cyan")
-    t.add_column("Folios", justify="right")
+    plan = Table(title="Plan (Excel Columns)")
+    plan.add_column("Tipo", style="cyan")
+    plan.add_column("Folios", justify="right")
     total = 0
     for tipo, folios in tipos.items():
-        t.add_row(tipo, str(len(folios)))
+        plan.add_row(tipo, str(len(folios)))
         total += len(folios)
-    console.print(t)
+    console.print(plan)
 
     console.print("\n[bold]Step 3[/bold] — Running (browser will open)")
 
-    counts = {}  # tipo -> dict(found, not_found, error)
+    counts: dict[str, dict[str, int]] = {}
 
     def on_progress(done, total, row):
         tipo = row["tipo"]
         counts.setdefault(tipo, {"FOUND": 0, "NOT_FOUND": 0, "ERROR": 0})
         counts[tipo][row["status"]] += 1
 
-        prog.update(task_id, completed=done)
-        prog.update(status_id, description=f"[dim]{tipo}[/dim]  [bold]{row['folio']}[/bold] → {row['status']}")
+        prog.update(
+            task_id,
+            completed=done,
+            description=f"Checking  [dim]{tipo}[/dim]  [bold]{row['folio']}[/bold] → {row['status']}",
+        )
 
     with Progress(
         TextColumn("[bold]{task.description}"),
@@ -89,7 +105,6 @@ def main():
         console=console,
     ) as prog:
         task_id = prog.add_task("Checking folios", total=total)
-        status_id = prog.add_task("Status", total=1)
         try:
             out_full, out_missing = pjf_checker.run(
                 excel_path=str(p),
@@ -113,8 +128,15 @@ def main():
         summary.add_row(tipo, str(c["FOUND"]), str(c["NOT_FOUND"]), str(c["ERROR"]))
     console.print(summary)
 
-    console.print(f"\n[bold]Results:[/bold]\n- {out_full}\n- {out_missing}")
+    out_full_p = Path(out_full)
+    out_missing_p = Path(out_missing)
+
+    console.print(f"\n[bold]Results:[/bold]\n- {out_full_p}\n- {out_missing_p}")
+
+    # Open folder + files (best effort)
     open_folder(out_dir)
+    open_file(out_full_p)
+    open_file(out_missing_p)
 
 if __name__ == "__main__":
     main()
