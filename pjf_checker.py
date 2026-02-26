@@ -578,6 +578,21 @@ def run_plan(*, plan, expected_dates, excel_label, user, password, out_dir, on_p
     import re as _re
     from datetime import datetime
     from pathlib import Path as _Path
+    import sys
+    from pathlib import Path as _Path
+
+    def _configure_bundled_playwright():
+        # B1: when packaged, use bundled Chromium next to the exe
+        if os.environ.get('PLAYWRIGHT_BROWSERS_PATH'):
+            return
+        base = _Path(sys.executable).resolve().parent if getattr(sys, 'frozen', False) else _Path(__file__).resolve().parent
+        bundled = base / 'ms-playwright'
+        if bundled.exists():
+            os.environ['PLAYWRIGHT_BROWSERS_PATH'] = str(bundled)
+            os.environ.setdefault('PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD', '1')
+
+    _configure_bundled_playwright()
+
     from playwright.sync_api import sync_playwright
 
     keep_secs = 0.0

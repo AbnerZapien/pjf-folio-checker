@@ -40,3 +40,12 @@ debug_*.txt
 *.bak
 *.py.bak*
 
+
+# Windows build artifacts (B1)
+.buildvenv/
+build_assets/
+dist/
+build/
+*.spec
+PJF-Folio-Checker-*.zip
+run.log
