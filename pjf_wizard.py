@@ -15,6 +15,14 @@ import pjf_checker
 
 console = Console()
 
+def normalize_path_input(raw: str) -> str:
+    s = raw.strip().strip('"').strip("'")
+    # If it's a mac/Linux path, unescape Terminal drag&drop sequences (\ , \(, \), etc.)
+    if s.startswith('/'):
+        s = re.sub(r"\\([ ()\[\]{}&;\"'#$!])", r"\1", s)
+    return s
+
+
 def open_folder(path: Path):
     try:
         if platform.system() == "Windows":
@@ -31,7 +39,7 @@ def main():
 
     console.print("\n[bold]Step 1[/bold] — Excel file")
     console.print("[dim]Tip: drag & drop the file into this terminal and press Enter.[/dim]")
-    excel_path = Prompt.ask("Excel file path").strip().strip('"').strip("'")
+    excel_path = normalize_path_input(Prompt.ask("Excel file path"))
     p = Path(excel_path).expanduser()
     if not p.exists():
         console.print(f"[bold red]File not found:[/bold red] {p}")
