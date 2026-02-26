@@ -1,0 +1,76 @@
+name: Release Windows B1
+
+on:
+  push:
+    tags:
+      - "v*-windows-b1"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-b1:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pyinstaller
+
+      - name: Install Playwright Chromium
+        shell: pwsh
+        run: |
+          python -m playwright install chromium
+
+      - name: Copy Playwright browsers for bundling (B1)
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force build_assets -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path build_assets\ms-playwright | Out-Null
+          Copy-Item -Recurse -Force "$env:LOCALAPPDATA\ms-playwright\*" "build_assets\ms-playwright\"
+
+      - name: Build EXE folder with PyInstaller (onedir)
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force dist, build -ErrorAction SilentlyContinue
+          pyinstaller --clean --noconfirm --onedir --name "PJF-Folio-Checker" `
+            --collect-all playwright `
+            --collect-all openpyxl `
+            --collect-all rich `
+            --add-data "build_assets\ms-playwright;ms-playwright" `
+            pjf_wizard.py
+
+      - name: Add boss README into dist folder
+        shell: pwsh
+        run: |
+          Copy-Item -Force README_BOSS_WINDOWS.txt "dist\PJF-Folio-Checker\README_BOSS_WINDOWS.txt"
+
+      - name: Create ZIP
+        shell: pwsh
+        run: |
+          $zip = "PJF-Folio-Checker-Windows-B1.zip"
+          if (Test-Path $zip) { Remove-Item $zip -Force }
+          Compress-Archive -Path "dist\PJF-Folio-Checker\*" -DestinationPath $zip -Force
+
+      - name: Compute SHA256
+        shell: pwsh
+        run: |
+          (Get-FileHash -Algorithm SHA256 PJF-Folio-Checker-Windows-B1.zip).Hash | Out-File -Encoding ascii PJF-Folio-Checker-Windows-B1.zip.sha256
+
+      - name: Create GitHub Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            PJF-Folio-Checker-Windows-B1.zip
+            PJF-Folio-Checker-Windows-B1.zip.sha256
