@@ -48,6 +48,25 @@ def normalize_folio(v):
 def excel_date_to_iso(v):
     if v is None:
         return None
+    import datetime as dt
+    if isinstance(v, dt.datetime):
+        return v.date().isoformat()
+    if isinstance(v, dt.date):
+        return v.isoformat()
+
+    s = str(v).strip()
+
+    # Accept DD/MM/YY or DD/MM/YYYY
+    m = re.match(r"^(\d{1,2})/(\d{1,2})/(\d{2,4})$", s)
+    if m:
+        dd = int(m.group(1))
+        mm = int(m.group(2))
+        yyyy = int(m.group(3))
+        if yyyy < 100:
+            yyyy = 2000 + yyyy
+        return f"{yyyy:04d}-{mm:02d}-{dd:02d}"
+
+    return None
     # Excel date -> python datetime/date
     import datetime as dt
     if isinstance(v, dt.datetime):

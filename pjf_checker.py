@@ -581,10 +581,22 @@ def run_plan(*, plan, expected_dates, excel_label, user, password, out_dir, on_p
     from playwright.sync_api import sync_playwright
 
     keep_secs = 0.0
+    checkpoint_every = 25
+    try:
+        checkpoint_every = int(os.environ.get("PJF_CHECKPOINT_EVERY", "25") or "25")
+    except Exception:
+        checkpoint_every = 25
+
     try:
         keep_secs = float(os.environ.get("PJF_KEEP_TAB_SECONDS", "0") or "0")
     except Exception:
         keep_secs = 0.0
+    checkpoint_every = 25
+    try:
+        checkpoint_every = int(os.environ.get("PJF_CHECKPOINT_EVERY", "25") or "25")
+    except Exception:
+        checkpoint_every = 25
+
 
     def _js_click(locator):
         loc = locator.first
@@ -866,7 +878,7 @@ def run_plan(*, plan, expected_dates, excel_label, user, password, out_dir, on_p
                 on_progress(done, total, row)
 
             # checkpoint every 25 so crashes don't lose everything
-            if done % 25 == 0:
+            if checkpoint_every > 0 and done % checkpoint_every == 0:
                 _write_results(out_full, out_missing, rows)
 
         try:
