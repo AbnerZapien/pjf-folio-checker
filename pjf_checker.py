@@ -640,7 +640,7 @@ def run_plan(*, plan, expected_dates, excel_label, user, password, out_dir, on_p
         except Exception:
             pass
 
-    DATE = _re.compile(r"(\\d{2})/(\\d{2})/(\\d{4})")
+    DATE = _re.compile(r"(\d{2})/(\d{2})/(\d{4})")
     def _to_iso(text: str):
         m = DATE.search(text or "")
         if not m:
@@ -710,7 +710,7 @@ def run_plan(*, plan, expected_dates, excel_label, user, password, out_dir, on_p
             if v and v not in seen:
                 seen.add(v)
                 iso.append(v)
-        return iso
+        return fechas, iso
 
     # Flatten plan into cases
     cases = []
@@ -759,6 +759,7 @@ def run_plan(*, plan, expected_dates, excel_label, user, password, out_dir, on_p
             done += 1
             status = "ERROR"
             notes = ""
+            fecha_ingreso_raw = []
             fecha_ingreso_iso = []
             match = None
             tab_url = ""
@@ -818,7 +819,7 @@ def run_plan(*, plan, expected_dates, excel_label, user, password, out_dir, on_p
                         pass
 
                     tab_url = new_tab.url or ""
-                    fecha_ingreso_iso = _extract_fecha_ingreso(new_tab)
+                    fecha_ingreso_raw, fecha_ingreso_iso = _extract_fecha_ingreso(new_tab)
 
                     if expected_iso and fecha_ingreso_iso:
                         match = expected_iso in set(fecha_ingreso_iso)
@@ -852,6 +853,7 @@ def run_plan(*, plan, expected_dates, excel_label, user, password, out_dir, on_p
                 "folio": folio,
                 "status": status,
                 "expected_fecha_iso": expected_iso or "",
+                "fecha_ingreso_raw": ", ".join(fecha_ingreso_raw) if fecha_ingreso_raw else "",
                 "fecha_ingreso_iso": ", ".join(fecha_ingreso_iso) if fecha_ingreso_iso else "",
                 "match": match if match is not None else "",
                 "tab_url": tab_url,
@@ -882,19 +884,19 @@ def _write_results(out_full, out_missing, rows):
     wb = Workbook()
     ws = wb.active
     ws.title = "Results"
-    ws.append(["Tipo", "Folio", "Status", "Expected_ValorFecha_ISO", "FechaIngreso_ISO_List", "Match", "TabURL", "CheckedAt", "Notes"])
+    ws.append(["Tipo", "Folio", "Status", "Expected_ValorFecha_ISO", "FechaIngreso_Raw_List", "FechaIngreso_ISO_List", "Match", "TabURL", "CheckedAt", "Notes"])
     for r in rows:
-        ws.append([r["tipo"], r["folio"], r["status"], r["expected_fecha_iso"], r["fecha_ingreso_iso"], r["match"], r["tab_url"], r["checked_at"], r["notes"]])
+        ws.append([r["tipo"], r["folio"], r["status"], r["expected_fecha_iso"], r.get("fecha_ingreso_raw",""), r["fecha_ingreso_iso"], r["match"], r["tab_url"], r["checked_at"], r["notes"]])
         ws.cell(row=ws.max_row, column=2).number_format = "@"
     wb.save(out_full)
 
     wb2 = Workbook()
     ws2 = wb2.active
     ws2.title = "FollowUp"
-    ws2.append(["Tipo", "Folio", "Status", "Expected_ValorFecha_ISO", "FechaIngreso_ISO_List"])
+    ws2.append(["Tipo", "Folio", "Status", "Expected_ValorFecha_ISO", "FechaIngreso_Raw_List", "FechaIngreso_ISO_List"])
     for r in rows:
         if r["status"] in ("NOT_FOUND", "FOUND_MISMATCH", "FOUND_NO_FECHA", "ERROR"):
-            ws2.append([r["tipo"], r["folio"], r["status"], r["expected_fecha_iso"], r["fecha_ingreso_iso"]])
+            ws2.append([r["tipo"], r["folio"], r["status"], r["expected_fecha_iso"], r.get("fecha_ingreso_raw",""), r["fecha_ingreso_iso"]])
             ws2.cell(row=ws2.max_row, column=2).number_format = "@"
     wb2.save(out_missing)
 def run(excel_path: str, user: str, password: str, circuito: str = "SEXTO CIRCUITO",
