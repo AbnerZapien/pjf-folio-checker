@@ -299,7 +299,7 @@ def _dismiss_advertencia_js(page):
     _cleanup_overlays(page)
     return True
 
-def run(excel_path: str, user: str, password: str, circuito: str = CIRCUITO_TARGET,
+def run(excel_path: str, user: str, password: str, circuito: str = "SEXTO CIRCUITO",
         profile_dir: str = "pw_profile_pjf_multi", on_progress=None):
     tipos = read_folios_by_tipo_xlsx(excel_path)
     if not tipos:
