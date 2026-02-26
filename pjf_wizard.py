@@ -4,6 +4,7 @@ import re
 import getpass
 import platform
 import subprocess
+import time
 from pathlib import Path
 
 from rich.console import Console
@@ -26,11 +27,18 @@ def normalize_path_input(raw: str) -> str:
 def open_path(path: Path) -> bool:
     try:
         if platform.system() == "Darwin":
-            subprocess.run(["open", str(path)], check=False)
-        elif platform.system() == "Windows":
+            r = subprocess.run(["open", str(path)], capture_output=True, text=True)
+            if r.returncode != 0:
+                console.print(f"[yellow]Could not auto-open:[/yellow] {path} ({(r.stderr or '').strip()})")
+                return False
+            return True
+        if platform.system() == "Windows":
             os.startfile(str(path))  # type: ignore[attr-defined]
-        else:
-            subprocess.run(["xdg-open", str(path)], check=False)
+            return True
+        r = subprocess.run(["xdg-open", str(path)], capture_output=True, text=True)
+        if r.returncode != 0:
+            console.print(f"[yellow]Could not auto-open:[/yellow] {path} ({(r.stderr or '').strip()})")
+            return False
         return True
     except Exception as e:
         console.print(f"[yellow]Could not auto-open:[/yellow] {path} ({e})")
@@ -41,6 +49,7 @@ def open_folder(path: Path) -> bool:
 
 def open_file(path: Path) -> bool:
     return open_path(path)
+
 
 def main():
     console.print(
@@ -137,6 +146,7 @@ def main():
     open_folder(out_dir)
     open_file(out_full_p)
     open_file(out_missing_p)
+    time.sleep(0.8)
 
 if __name__ == "__main__":
     main()
