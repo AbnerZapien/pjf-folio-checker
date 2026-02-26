@@ -30,3 +30,13 @@ pw_profile_*/
 __pycache__/
 *.pyc
 .DS_Store
+
+# Local artifacts
+.venv/
+pw_profile_*/
+debug_*.png
+debug_*.txt
+*.xlsx
+*.bak
+*.py.bak*
+
