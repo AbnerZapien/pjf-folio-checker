@@ -22,3 +22,28 @@ Saved in the **same folder as your Excel**:
 ## Notes
 - First run may take longer (installs dependencies + browser).
 - Drag & drop paths are supported (macOS Terminal paths with `\ ` are handled).
+
+## Windows Quick Start
+**One-time setup**
+1) Install **Python 3.10+ (64-bit)** from python.org (check **Add Python to PATH**).
+2) Download ZIP from GitHub and unzip.
+
+**Run**
+- Double-click `run.bat`
+- First run installs dependencies + Playwright Chromium.
+
+## macOS Quick Start
+**One-time setup**
+1) Install **Python 3.10+** from python.org
+
+**Run**
+- Right-click `run.command` → Open
+- First run installs dependencies + Playwright Chromium.
+
+## Optional environment settings
+- Keep found tabs open:
+  - Windows (CMD): `set PJF_KEEP_TAB_SECONDS=2`
+  - macOS: `export PJF_KEEP_TAB_SECONDS=2`
+- Checkpoint frequency:
+  - Windows: `set PJF_CHECKPOINT_EVERY=10`
+  - macOS: `export PJF_CHECKPOINT_EVERY=10`
