@@ -1,0 +1,11 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+pw_profile_*/
+Folios_results.xlsx
+Folios_missing.xlsx
+debug*.png
+debug_*.png
+.env
+.env_pjf
