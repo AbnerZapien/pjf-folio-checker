@@ -17,3 +17,7 @@ python3 -m pip install -r requirements.txt
 python3 -m playwright install chromium
 
 python3 pjf_wizard.py
+
+echo ""
+echo "Press Enter to close..."
+read -r
