@@ -9,3 +9,24 @@ debug*.png
 debug_*.png
 .env
 .env_pjf
+# Local artifacts / generated outputs
+debug_*.png
+debug_*.txt
+debug_organo_options.txt
+*.xlsx
+
+# Backups
+*.bak
+*.py.bak*
+*.bak_*
+
+# Local patch scripts (dev-only)
+patch_*.py
+tools/patch_*.py
+
+# Playwright / Python env
+.venv/
+pw_profile_*/
+__pycache__/
+*.pyc
+.DS_Store
